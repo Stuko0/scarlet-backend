@@ -6,8 +6,6 @@ import (
 	"net/http"
 	repository "scarlet_backend/config"
 	"scarlet_backend/internal/domain/entities"
-	"strconv"
-	"time"
 )
 
 var(repo repository.UserRepository = repository.NewUserRepository())
@@ -35,6 +33,11 @@ func GetUserByEmail(resp http.ResponseWriter, req *http.Request){
 		resp.Write([]byte(`{"error:" "Error obteniendo el usuario"}`))
 		return
 	}
+	if user == nil {
+		resp.WriteHeader(http.StatusNotFound)
+		resp.Write([]byte(`{"error:" "Usuario no encontrado"}`))
+		return
+	}
 	resp.WriteHeader(http.StatusOK)
 	json.NewEncoder(resp).Encode(user)
 }
@@ -48,6 +51,11 @@ func GetUserByPhone(resp http.ResponseWriter, req *http.Request){
 	if err!= nil{
 		resp.WriteHeader(http.StatusInternalServerError)
 		resp.Write([]byte(`{"error:" "Error obteniendo el usuario"}`))
+		return
+	}
+	if user == nil {
+		resp.WriteHeader(http.StatusNotFound)
+		resp.Write([]byte(`{"error:" "Usuario no encontrado"}`))
 		return
 	}
 	resp.WriteHeader(http.StatusOK)
@@ -64,7 +72,6 @@ func AddUsers(resp http.ResponseWriter, req *http.Request){
 		return
 	}
 	user.Id=rand.Int63()
-	user.Origin="email"
 	repo.SaveByEmail(&user)
 	resp.WriteHeader(http.StatusOK)
 	json.NewEncoder(resp).Encode(user)
@@ -91,25 +98,48 @@ func CheckLogin(resp http.ResponseWriter, req *http.Request){
 	resp.Write([]byte(`{"status:" "Inicio de sesión exitoso"}`))
 }
 
-func generateVerificationCode() string {
-	rand.Seed(time.Now().UnixNano())
-	code := rand.Intn(900000) + 100000 // Genera un número aleatorio de 6 dígitos
-	return strconv.Itoa(code)
-}
-
-func SendVerificationCode(resp http.ResponseWriter, req *http.Request){
+func SendOTP(resp http.ResponseWriter, req *http.Request){
 	resp.Header().Set("Content-type", "application/json")
 	var params map[string]string
 	json.NewDecoder(req.Body).Decode(&params)
 	phone := params["phone"]
-	code := params[generateVerificationCode()]
-
-	err :=  repo.SendVerificationCode(phone, code)
+	otp_id, err :=  repo.SendOTP(phone)
 	if err!= nil{
 		resp.WriteHeader(http.StatusInternalServerError)
-		resp.Write([]byte(`{"error:" "Error enviando el código de verificación"}`))
+		resp.Write([]byte(`{"error:" "Error enviando el OTP"}`))
 		return
 	}
 	resp.WriteHeader(http.StatusOK)
-	json.NewEncoder(resp).Encode(entities.User{Phone: phone})
+	json.NewEncoder(resp).Encode(map[string]string{"otp_id": otp_id})
+}
+
+func VerifyOTP(resp http.ResponseWriter, req *http.Request){
+	resp.Header().Set("Content-type", "application/json")
+	var params map[string]string
+	json.NewDecoder(req.Body).Decode(&params)
+	otp_id := params["otp_id"]
+	otp_code := params["otp_code"]
+	err :=  repo.VerifyOTP(otp_id, otp_code)
+	if err!= nil{
+		resp.WriteHeader(http.StatusInternalServerError)
+		resp.Write([]byte(`{"error": "Error verificando el OTP: ` + err.Error() + `", "otp_id": "` + otp_id + `", "otp_code": "` + otp_code + `"}`))
+		return
+	}
+	resp.WriteHeader(http.StatusOK)
+	json.NewEncoder(resp).Encode(map[string]string{"status": "verified"})
+}
+
+func AddUsersByPhone(resp http.ResponseWriter, req *http.Request){
+	resp.Header().Set("Content-type", "application/json")
+	var user entities.User
+	err:=json.NewDecoder(req.Body).Decode(&user)
+	if err!= nil{
+		resp.WriteHeader(http.StatusInternalServerError)
+		resp.Write([]byte(`{"error:" "Error marshalling the request"}`))
+		return
+	}
+	user.Id=rand.Int63()
+	repo.SaveByPhone(&user)
+	resp.WriteHeader(http.StatusOK)
+	json.NewEncoder(resp).Encode(user)
 }

@@ -17,7 +17,10 @@ func main(){
 	router.HandleFunc("/users/register", services.AddUsers).Methods("POST")
 	router.HandleFunc("/users/getUserByEmail", services.GetUserByEmail).Methods("POST")
 	router.HandleFunc("/users/checkLogin", services.CheckLogin).Methods("POST")
-	router.HandleFunc("/users/sendCode", services.SendVerificationCode).Methods("POST")
+	router.HandleFunc("/users/sendPhoneCode", services.SendOTP).Methods("POST")
+	router.HandleFunc("/users/verifyPhoneCode", services.VerifyOTP).Methods("POST")
+	router.HandleFunc("/users/getUserByPhone", services.GetUserByPhone).Methods("POST")
+	router.HandleFunc("/users/registerUserByPhoneNumber", services.AddUsersByPhone).Methods("POST")
 
 	headersOk := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type"})
 	originsOk := handlers.AllowedOrigins([]string{"*"})

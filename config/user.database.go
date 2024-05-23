@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"log"
 	"scarlet_backend/internal/domain/entities"
-
+	"bytes"
+	"encoding/json"
+	"io/ioutil"
+	"net/http"
 	"cloud.google.com/go/firestore"
-	firebase "firebase.google.com/go"
-	"firebase.google.com/go/messaging"
 	"google.golang.org/api/iterator"
-	"google.golang.org/api/option"
 )
 
 type UserRepository interface{
@@ -18,8 +18,10 @@ type UserRepository interface{
 	FindAll()([]entities.User, error)
 	FindByEmail(email string) (*entities.User, error)
 	CheckLogin(email string, psw string) (*entities.User, error)
+	SendOTP(phone string)(string, error)
+	VerifyOTP(otp_id string, otp_code string) error
 	FindByPhone(phone string) (*entities.User, error)
-	SendVerificationCode(phone string, code string) error
+	SaveByPhone(user *entities.User) (*entities.User, error)
 }
 
 type repo struct{}
@@ -32,6 +34,10 @@ const (
 	projectId 	string = "scarlet-419401"
 	collectionName string = "users"
 )
+
+type OTPResponse struct {
+	OtpID string `json:"otp_id"`
+}
 
 func (*repo) SaveByEmail(user *entities.User) (*entities.User, error){
 	ctx := context.Background()
@@ -47,8 +53,8 @@ func (*repo) SaveByEmail(user *entities.User) (*entities.User, error){
 		"name": user.Name,
 		"lastname": user.Lastname,
 		"email": user.Email,
-		"psw": user.Pwd,
-		"origin": user.Origin,
+		"psw": user.Psw,
+		"origin": "email",
 	})
 
 	if err != nil{
@@ -80,7 +86,7 @@ func (*repo) FindAll()([]entities.User, error){
 			Name: doc.Data()["name"].(string),
 			Lastname: doc.Data()["lastname"].(string),
 			Email: doc.Data()["email"].(string),
-			Pwd: doc.Data()["psw"].(string),
+			Psw: doc.Data()["psw"].(string),
 			Origin: doc.Data()["origin"].(string),
 		}
 		users = append(users, user)
@@ -101,13 +107,17 @@ func (*repo) FindByEmail(email string) (*entities.User, error){
 	dsnap, err := query.Documents(ctx).Next()
 	if err == iterator.Done {
 		log.Println("No se encontró ningún usuario con ese correo electrónico")
-		return nil, nil
+		return nil, fmt.Errorf("No se encontró ningún usuario con ese correo electrónico")
 	} else
 	if err != nil {
 		log.Fatalf("No se pudo encontrar al usuario: %v", err)
 		return nil, err
 	}
 	var user entities.User
+	if err := dsnap.DataTo(&user); err != nil {
+    log.Fatalf("Error mapping document to User: %v", err)
+    return nil, err
+}
 	dsnap.DataTo(&user)
 	return &user, nil
 }
@@ -120,7 +130,10 @@ func (r *repo) CheckLogin(email string, psw string) (*entities.User, error){
 	if user == nil {
 		return nil, fmt.Errorf("no user found with email %s", email)
 	}
-	if user.Pwd != psw {
+	if user.Psw == "" {
+		return nil, fmt.Errorf("password not set for email %s", email)
+	}
+	if user.Psw != psw {
 		return nil, fmt.Errorf("incorrect password for email %s", email)
 	}
 	return user, nil
@@ -150,36 +163,76 @@ func (*repo) FindByPhone(phone string) (*entities.User, error){
 	return &user, nil
 }
 
-func (*repo) SendVerificationCode(phone string, code string) error {
-	ctx := context.Background()
-	opt := option.WithCredentialsFile("D:/clases/Integrador/backend/scarlet-419401.json")
-	app, err := firebase.NewApp(ctx, nil, opt)
+func (*repo) SendOTP(phone string) (string, error) {
+	url := "https://d7sms.p.rapidapi.com/verify/v1/otp/send-otp"
+	payload := map[string]string{
+		"originator": "SignOTP",
+		"recipient": phone,
+		"content": "Tu codigo de Scarlet App es: {}",
+		"expiry": "600",
+		"data_coding": "text",
+	}
+	payloadBytes, _ := json.Marshal(payload)
+	req, _ := http.NewRequest("POST", url, bytes.NewReader(payloadBytes))
+	req.Header.Add("content-type", "application/json")
+	req.Header.Add("Token", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJhdXRoLWJhY2tlbmQ6YXBwIiwic3ViIjoiYTViMDAwYWEtODZmOS00YzcyLThhNzItMTI0N2NkN2E3MzdkIn0.evTIuqF8ixasgJF39M1aS9ohoUGX2wHi9yN80lQkQLc")
+	req.Header.Add("X-RapidAPI-Key", "a7b5094c54msh978fed74d9e9925p1bd538jsncaf858139020")
+	req.Header.Add("X-RapidAPI-Host", "d7sms.p.rapidapi.com")
+	res, err := http.DefaultClient.Do(req)
 	if err != nil {
-		log.Fatalf("Error al inicializar la aplicación de Firebase: %v", err)
+		return "", err
+	}
+	defer res.Body.Close()
+	body, _ := ioutil.ReadAll(res.Body)
+	var otpResponse OTPResponse
+	json.Unmarshal(body, &otpResponse)
+	return otpResponse.OtpID, nil
+}
+
+func (*repo) VerifyOTP(otp_id string, otp_code string) error {
+	url := "https://d7sms.p.rapidapi.com/verify/v1/otp/verify-otp"
+	payload := map[string]string{
+		"otp_id": otp_id,
+		"otp_code": otp_code,
+	}
+	payloadBytes, _ := json.Marshal(payload)
+	req, _ := http.NewRequest("POST", url, bytes.NewReader(payloadBytes))
+	req.Header.Add("content-type", "application/json")
+	req.Header.Add("Token", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJhdXRoLWJhY2tlbmQ6YXBwIiwic3ViIjoiYTViMDAwYWEtODZmOS00YzcyLThhNzItMTI0N2NkN2E3MzdkIn0.evTIuqF8ixasgJF39M1aS9ohoUGX2wHi9yN80lQkQLc")
+	req.Header.Add("X-RapidAPI-Key", "a7b5094c54msh978fed74d9e9925p1bd538jsncaf858139020")
+	req.Header.Add("X-RapidAPI-Host", "d7sms.p.rapidapi.com")
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
 		return err
 	}
-
-	client, err := app.Messaging(ctx)
-	if err != nil {
-		log.Fatalf("Error al obtener el cliente de Messaging: %v", err)
-		return err
+	defer res.Body.Close()
+	if res.StatusCode != 200 {
+		return fmt.Errorf("Error al verificar el OTP: %s", res.Status)
 	}
-	// Crear el mensaje
-	message := &messaging.Message{
-		Data: map[string]string{
-			"code": code,
-		},
-		Token: phone,
-	}
-
-	// Enviar el mensaje
-	response, err := client.Send(context.Background(), message)
-	if err != nil {
-		log.Fatalf("Error al enviar el mensaje: %v", err)
-		return err
-	}
-
-	// Imprimir el ID del mensaje
-	log.Printf("Mensaje enviado con éxito, ID: %s", response)
 	return nil
+}
+
+func (*repo) SaveByPhone(user *entities.User) (*entities.User, error){
+	ctx := context.Background()
+	client, err  :=  firestore.NewClient(ctx, projectId)
+	if err != nil{
+		log.Printf("No se pudo crear la conexion a la base de datos: %v", err)
+		return nil, err
+	}
+	
+	defer client.Close()
+	_,_, err=client.Collection(collectionName).Add(ctx, map[string]interface{}{
+		"id": user.Id,
+		"name": user.Name,
+		"lastname": user.Lastname,
+		"email": user.Email,
+		"phone": user.Phone,
+		"origin": "phone",
+	})
+
+	if err != nil{
+		log.Fatalf("No se pudo registrar al usuario: %v", err)
+		return nil, err
+	}
+	return user, nil
 }
