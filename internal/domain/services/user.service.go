@@ -22,6 +22,26 @@ func GetUsers(resp http.ResponseWriter, req *http.Request){
 	json.NewEncoder(resp).Encode(users)
 }
 
+func GetUserById(resp http.ResponseWriter, req *http.Request){
+	resp.Header().Set("Content-type", "application/json")
+	var params map[string]int
+	json.NewDecoder(req.Body).Decode(&params)
+	id := params["id"]
+	user, err :=  repo.FindById(id)
+	if err!= nil{
+		resp.WriteHeader(http.StatusInternalServerError)
+		resp.Write([]byte(`{"error:" "Error obteniendo el usuario"}`))
+		return
+	}
+	if user == nil {
+		resp.WriteHeader(http.StatusNotFound)
+		resp.Write([]byte(`{"error:" "Usuario no encontrado"}`))
+		return
+	}
+	resp.WriteHeader(http.StatusOK)
+	json.NewEncoder(resp).Encode(user)
+}
+
 func GetUserByEmail(resp http.ResponseWriter, req *http.Request){
 	resp.Header().Set("Content-type", "application/json")
 	var params map[string]string
@@ -95,7 +115,13 @@ func CheckLogin(resp http.ResponseWriter, req *http.Request){
 		return
 	}
 	resp.WriteHeader(http.StatusOK)
-	resp.Write([]byte(`{"status:" "Inicio de sesión exitoso"}`))
+	userJson, err := json.Marshal(userFinded)
+	if err != nil {
+		resp.WriteHeader(http.StatusInternalServerError)
+		resp.Write([]byte(`{"error": "Error serializando el usuario"}`))
+		return
+	}
+	resp.Write(userJson)
 }
 
 func SendOTP(resp http.ResponseWriter, req *http.Request){

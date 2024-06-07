@@ -17,6 +17,7 @@ type UserRepository interface{
 	SaveByEmail(user *entities.User)(*entities.User, error)
 	FindAll()([]entities.User, error)
 	FindByEmail(email string) (*entities.User, error)
+	FindById(id int) (*entities.User, error)
 	CheckLogin(email string, psw string) (*entities.User, error)
 	SendOTP(phone string)(string, error)
 	VerifyOTP(otp_id string, otp_code string) error
@@ -108,6 +109,34 @@ func (*repo) FindByEmail(email string) (*entities.User, error){
 	if err == iterator.Done {
 		log.Println("No se encontró ningún usuario con ese correo electrónico")
 		return nil, fmt.Errorf("No se encontró ningún usuario con ese correo electrónico")
+	} else
+	if err != nil {
+		log.Fatalf("No se pudo encontrar al usuario: %v", err)
+		return nil, err
+	}
+	var user entities.User
+	if err := dsnap.DataTo(&user); err != nil {
+    log.Fatalf("Error mapping document to User: %v", err)
+    return nil, err
+}
+	dsnap.DataTo(&user)
+	return &user, nil
+}
+
+func (*repo) FindById(id int) (*entities.User, error){
+	ctx := context.Background()
+	client, err  :=  firestore.NewClient(ctx, projectId)
+	if err != nil{
+		log.Printf("No se pudo crear la conexion a la base de datos: %v", err)
+		return nil, err
+	}
+	
+	defer client.Close()
+	query := client.Collection(collectionName).Where("id", "==", id)
+	dsnap, err := query.Documents(ctx).Next()
+	if err == iterator.Done {
+		log.Println("No se encontró ningún usuario con ese id")
+		return nil, fmt.Errorf("No se encontró ningún usuario con ese id")
 	} else
 	if err != nil {
 		log.Fatalf("No se pudo encontrar al usuario: %v", err)
