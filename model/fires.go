@@ -1,4 +1,4 @@
-package entities
+package model
 
 type Fire struct {
 	Id         int64   `json:"id"`
@@ -16,4 +16,5 @@ type Fire struct {
 	Scan       float64 `json:"scan"`
 	Track      float64 `json:"track"`
 	Satellite  string  `json:"satellite"`
+	Active     string  `json:"active"`
 }

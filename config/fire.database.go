@@ -45,6 +45,7 @@ func (*fireRepo) SaveFire(fire *entities.Fire) (*entities.Fire, error){
 	return fire, nil
 }
 
+
 func (*fireRepo) GetFireFromDB() ([]*entities.Fire, error){
 	ctx := context.Background()
 	client, err  :=  firestore.NewClient(ctx, projectId)

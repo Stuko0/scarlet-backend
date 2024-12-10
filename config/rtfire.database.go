@@ -13,6 +13,7 @@ type RTFireRepository interface{
 	SaveRTFire(fire *entities.RTFire)(*entities.RTFire, error)
 	GetRTFireFromDB() ([]*entities.RTFire, error)
 	DeleteAllRTFires() error
+	UpdateFire(fire *entities.RTFire) (*entities.RTFire, error)
 }
 
 
@@ -49,6 +50,35 @@ func (*rtfireRepo) SaveRTFire(fire *entities.RTFire) (*entities.RTFire, error){
 	return fire, nil
 }
 
+
+
+func (*rtfireRepo) UpdateFire(fire *entities.RTFire) (*entities.RTFire, error){
+	ctx := context.Background()
+	client, err  :=  firestore.NewClient(ctx, projectId)
+	if err != nil{
+		log.Printf("No se pudo crear la conexion a la base de datos: %v", err)
+		return nil, err
+	}
+	
+	defer client.Close()
+	_, err = client.Collection("rtfires").Doc(fire.DocID).Set(ctx, map[string]interface{}{
+		"id":fire.Id,
+		"latitude": fire.Latitude,
+		"longitude": fire.Longitude,
+		"detectedAt": fire.DetectedAt,
+		"confidence": fire.Confidence,
+		"frp": fire.FRP,
+		"fwi": fire.FWI,
+		"fireType": fire.FireType,
+	}, firestore.MergeAll)
+
+	if err != nil{
+		log.Fatalf("No se pudo actualizar el incendio: %v", err)
+		return nil, err
+	}
+	return fire, nil
+}
+
 func (*rtfireRepo) GetRTFireFromDB() ([]*entities.RTFire, error){
 	ctx := context.Background()
 	client, err  :=  firestore.NewClient(ctx, projectId)
@@ -72,6 +102,7 @@ func (*rtfireRepo) GetRTFireFromDB() ([]*entities.RTFire, error){
 		}
 		var fire entities.RTFire
 		doc.DataTo(&fire)
+		fire.DocID = doc.Ref.ID
 		fires = append(fires, &fire)
 	}
 

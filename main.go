@@ -1,15 +1,17 @@
 package main
 
 import (
+	"github.com/gorilla/handlers"
+	"github.com/gorilla/mux"
 	"log"
 	"net/http"
 	"scarlet_backend/internal/domain/services"
-
-	"github.com/gorilla/handlers"
-	"github.com/gorilla/mux"
+	"time"
 )
 
 func main() {
+	ticker := time.NewTicker(60 * time.Minute)
+	quit := make(chan struct{})
 	router := mux.NewRouter()
 	router.HandleFunc("/", func(resp http.ResponseWriter, req *http.Request) {
 		resp.Write([]byte("Up and running..."))
@@ -26,6 +28,20 @@ func main() {
 	router.HandleFunc("/fires", services.GetSavedFires).Methods("GET")
 	router.HandleFunc("/fires/save", services.SaveFire).Methods("POST")
 	router.HandleFunc("/rtfires", services.GetSavedRTFires).Methods("GET")
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				_, err := services.SaveRTFireData()
+				if err != nil {
+					log.Printf("Error guardando los datos del incendio: %v", err)
+				}
+			case <-quit:
+				ticker.Stop()
+				return
+			}
+		}
+	}()
 	router.HandleFunc("/rtfires/save", services.SaveRTFire).Methods("POST")
 	router.HandleFunc("/rtfires/delete", services.DeleteAllRTFires).Methods("DELETE")
 

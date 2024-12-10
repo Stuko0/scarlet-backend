@@ -9,7 +9,9 @@ import (
 	"scarlet_backend/internal/domain/entities"
 )
 
-var(rtfireRepo repository.RTFireRepository = repository.NewRTFireRepository())
+var (
+	rtfireRepo repository.RTFireRepository = repository.NewRTFireRepository()
+)
 
 // GetFireData obtiene los datos del incendio
 func GetRTFireData() ([]*entities.RTFire, error) {
@@ -17,7 +19,7 @@ func GetRTFireData() ([]*entities.RTFire, error) {
 
 	req, _ := http.NewRequest("GET", url, nil)
 
-	req.Header.Add("x-api-key", "d73ba263d4f19b2d7c2293e4e55b1e5f408792b0482f51d89e32fccec9f69d3a")
+	req.Header.Add("x-api-key", "c82c0cd946c6a4648f9fb19a32032f4952def0810665e4f6fcd372335c3a312f")
 	req.Header.Add("Content-type", "application/json")
 
 	res, err := http.DefaultClient.Do(req)
@@ -56,52 +58,89 @@ func GetRTFireData() ([]*entities.RTFire, error) {
 	return fires, nil
 }
 
-
 func GetRTFires(resp http.ResponseWriter, req *http.Request) {
-    fire, err := GetRTFireData()
-    if err != nil {
-        http.Error(resp, err.Error(), http.StatusInternalServerError)
-        return
-    }
+	fire, err := GetRTFireData()
+	if err != nil {
+		http.Error(resp, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-    fireJson, err := json.Marshal(fire)
-    if err != nil {
-        http.Error(resp, err.Error(), http.StatusInternalServerError)
-        return
-    }
+	fireJson, err := json.Marshal(fire)
+	if err != nil {
+		http.Error(resp, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-    resp.Write(fireJson)
+	resp.Write(fireJson)
 }
 
+func SaveRTFireData() ([]*entities.RTFire, error) {
+	// Obtiene los datos del incendio
+	fires, err := GetRTFireData()
+	if err != nil {
+		return nil, err
+	}
 
-func SaveRTFire(resp http.ResponseWriter, req *http.Request){
-    resp.Header().Set("Content-type", "application/json")
+	// Obtiene los incendios existentes de la base de datos
+	existingFires, err := rtfireRepo.GetRTFireFromDB()
+	if err != nil {
+		return nil, err
+	}
 
-    // Obtiene los datos del incendio
-    fires, err := GetRTFireData()
-    if err != nil {
-        resp.WriteHeader(http.StatusInternalServerError)
-        resp.Write([]byte(`{"error:" "Error obteniendo los datos del incendio"}`))
-        return
-    }
+	var savedRTFires []*entities.RTFire
+	for _, fire := range fires {
 
-    var savedRTFires []*entities.RTFire
-    for _, fire := range fires {
-        fire.Id=rand.Int63()
-        savedRTFire, err := rtfireRepo.SaveRTFire(fire)
-        if err != nil {
-            resp.WriteHeader(http.StatusInternalServerError)
-            resp.Write([]byte(`{"error:" "Error guardando los datos del incendio"}`))
-            return
-        }
-        savedRTFires = append(savedRTFires, savedRTFire)
-    }
+		// Verifica si el incendio ya existe en la base de datos
+		existing := false
+		for _, existingFire := range existingFires {
+			if fire.Latitude == existingFire.Latitude && fire.Longitude == existingFire.Longitude {
+				existing = true
+				fire.DocID = existingFire.DocID
+				fire.Id = existingFire.Id
+				break
+			}
+		}
 
-    resp.WriteHeader(http.StatusOK)
-    json.NewEncoder(resp).Encode(savedRTFires)
+		var savedRTFire *entities.RTFire
+		if existing {
+			savedRTFire, err = rtfireRepo.UpdateFire(fire)
+		} else {
+			fire.Id = rand.Int63()
+			savedRTFire, err = rtfireRepo.SaveRTFire(fire)
+		}
+
+		if err != nil {
+			return nil, err
+		}
+		savedRTFires = append(savedRTFires, savedRTFire)
+	}
+
+	return savedRTFires, nil
 }
 
-func GetSavedRTFires(resp http.ResponseWriter, req *http.Request){
+func SaveRTFire(resp http.ResponseWriter, req *http.Request) {
+	resp.Header().Set("Content-type", "application/json")
+
+	savedRTFires, err := SaveRTFireData()
+	if err != nil {
+		resp.WriteHeader(http.StatusInternalServerError)
+		resp.Write([]byte(`{"error:" "Error guardando los datos del incendio"}`))
+		return
+	}
+
+	resp.WriteHeader(http.StatusOK)
+	json.NewEncoder(resp).Encode(savedRTFires)
+}
+
+func UpdateRTFire(fire *entities.RTFire) (*entities.RTFire, error) {
+	updatedFire, err := rtfireRepo.UpdateFire(fire)
+	if err != nil {
+		return nil, err
+	}
+	return updatedFire, nil
+}
+
+func GetSavedRTFires(resp http.ResponseWriter, req *http.Request) {
 	resp.Header().Set("Content-type", "application/json")
 	fires, err := rtfireRepo.GetRTFireFromDB()
 	if err != nil {
