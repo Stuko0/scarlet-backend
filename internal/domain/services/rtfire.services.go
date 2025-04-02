@@ -19,7 +19,7 @@ func GetRTFireData() ([]*entities.RTFire, error) {
 
 	req, _ := http.NewRequest("GET", url, nil)
 
-	req.Header.Add("x-api-key", "c82c0cd946c6a4648f9fb19a32032f4952def0810665e4f6fcd372335c3a312f")
+	req.Header.Add("x-api-key", "cbe5d9ec34e1ecccf15946fc2b06be555642b21de24208866077b19e35a9986e")
 	req.Header.Add("Content-type", "application/json")
 
 	res, err := http.DefaultClient.Do(req)
