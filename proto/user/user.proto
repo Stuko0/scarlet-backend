@@ -1,0 +1,74 @@
+syntax = "proto3";
+
+package user.v1;
+
+option go_package = "github.com/Stuko0/scarlet-backend/gen/proto/user/v1;userv1";
+
+
+message User{
+    int64 user_id = 1;
+    string name = 2;
+    string lastname = 3;
+    string email = 4;
+    string phone = 5;
+    string password = 6;
+    string origin = 7;
+    bool active = 8;
+    string role = 9;
+    string image = 10;
+    string created_at = 11;
+    string updated_at = 12;
+}
+
+service UserService{
+    rpc CreateUserByEmail(CreateUserByEmailRequest) returns (UserResponse);
+    rpc GetUser(GetUserRequest) returns (UserResponse);
+    rpc UpdateUser(UpdateUserRequest) returns (UserResponse);
+    rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
+    rpc LoginByEmail(LoginByEmailRequest) returns (LoginByEmailResponse);
+}
+
+message CreateUserByEmailRequest {
+    string name = 1;
+    string lastname = 2;
+    string email = 3;
+    string password = 4;
+    string origin = 5;
+}
+
+message UserResponse {
+    User user=1;
+}
+
+message GetUserRequest{
+    int64 user_id = 1;
+}
+
+message UpdateUserRequest{
+    int64 user_id = 1;
+    string name = 2;
+    string lastname = 3;
+    string email = 4;
+    string phone = 5;
+    string password = 6;
+    string role = 7;
+    string image = 8;
+}
+
+message DeleteUserRequest {
+    int64 user_id = 1;
+}
+
+message DeleteUserResponse{
+    bool success = 1;
+}
+
+message LoginByEmailRequest{
+    string email = 1;
+    string password = 2;
+}
+
+message LoginByEmailResponse{
+    string token = 1;
+    User user = 2;
+}
