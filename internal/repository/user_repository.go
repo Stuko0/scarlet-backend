@@ -34,8 +34,21 @@ func (r *UserRepository) CreateUserByEmail(ctx context.Context, user *models.Use
 	return &createdUser, nil
 }
 
+func (r *UserRepository) CreateUserByPhone(ctx context.Context, user *models.User)(*models.User, error){
+	query:= `INSERT INTO scarlet.users (name, lastname, email, phone, origin) VALUES ($1,$2,$3,$4,$5) RETURNING user_id`
+	var createdUser models.User
+	err:=r.db.Pool.QueryRow(ctx, query,
+		user.Name,
+		user.Lastname,
+		user.Email,
+		user.Phone,
+		user.Origin,).Scan(&createdUser.UserId)
+	if err!=nil{return nil, err}
+	return &createdUser, nil
+}
+
 func (r *UserRepository) UpdateUser(ctx context.Context, user *models.User)(*models.User, error){
-	query:=`UPDATE users SET name=$1,lastname=$2,email=$3,phone=$4,password=$5,role=$6,image=$7, updated_at=NOW() WHERE user_id=$8`
+	query:=`UPDATE scarlet.users SET name=$1,lastname=$2,email=$3,phone=$4,password=$5,role=$6,image=$7, updated_at=NOW() WHERE user_id=$8`
 	_,err:=r.db.Pool.Exec(ctx,query,
 		user.Name,
 		user.Lastname,
@@ -52,7 +65,7 @@ func (r *UserRepository) UpdateUser(ctx context.Context, user *models.User)(*mod
 }
 
 func (r *UserRepository) GetUserByEmail(ctx context.Context, email string)(*models.User, error){
-	query := `SELECT user_id, name, lastname, email, password, role FROM users WHERE email=$1`
+	query := `SELECT user_id, name, lastname, email, password, role FROM scarlet.users WHERE email=$1`
 	var user models.User
 	err := r.db.Pool.QueryRow(ctx, query, email).Scan(
 		&user.UserId,
@@ -67,7 +80,7 @@ func (r *UserRepository) GetUserByEmail(ctx context.Context, email string)(*mode
 }
 
 func (r *UserRepository) GetUserByID(ctx context.Context, userID int64) (*models.User, error){
-	query:=`SELECT user_id, name, lastname, email, role FROM users WHERE user_id=$1`
+	query:=`SELECT user_id, name, lastname, email, role FROM scarlet.users WHERE user_id=$1`
 	var user models.User
 	err:=r.db.Pool.QueryRow(ctx, query, userID).Scan(
 		&user.UserId,

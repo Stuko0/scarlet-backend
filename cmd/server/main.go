@@ -57,7 +57,7 @@ func main() {
 	mux.Handle(grpchealth.NewHandler(checker))
 
 	server := &http.Server{
-		Addr: ":8080",
+		Addr: ":8000",
 		Handler: h2c.NewHandler(
 			mux, &http2.Server{},
 		),

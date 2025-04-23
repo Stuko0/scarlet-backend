@@ -5,15 +5,15 @@ import (
 	"errors"
 	"connectrpc.com/connect"
 	userv1 "github.com/Stuko0/scarlet-backend/gen/proto/user/v1"
-	"github.com/Stuko0/scarlet-backend/internal/auth"
+	// "github.com/Stuko0/scarlet-backend/internal/auth"
 	"github.com/Stuko0/scarlet-backend/internal/models"
 	"github.com/Stuko0/scarlet-backend/internal/repository"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type UserService struct{
-	repo *repository.UserRepository
-	jwtManager *auth.JWTManager
+	repo UserRepositoryInterface
+	jwtManager JWTManagerInterface
 }
 
 func userToProto(user *models.User) *userv1.User {
@@ -32,7 +32,7 @@ func userToProto(user *models.User) *userv1.User {
 	}
 }
 
-func NewUserService(repo *repository.UserRepository, jwtManager *auth.JWTManager) *UserService {
+func NewUserService(repo UserRepositoryInterface, jwtManager JWTManagerInterface) *UserService {
 	return &UserService{
 		repo: repo,
 		jwtManager: jwtManager,
@@ -43,11 +43,22 @@ func (s *UserService) CreateUserByEmail(ctx context.Context, req *connect.Reques
 		return nil, connect.NewError(connect.CodeInvalidArgument, connect.NewError(connect.CodeInvalidArgument, errors.New("email and password are required")))
 	}
 
+	if len(req.Msg.Password)<8{
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("password must be 8+ characters"))
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword(
+		[]byte(req.Msg.Password),
+		bcrypt.DefaultCost,
+	)
+
+	if err != nil{return nil, connect.NewError(connect.CodeInternal, err)}
+
 	userModel := &models.User{
 		Name:     req.Msg.Name,
 		Lastname: req.Msg.Lastname,
 		Email:    req.Msg.Email,
-		Password: req.Msg.Password,
+		Password: string(hashedPassword),
 		Origin:   req.Msg.Origin,
 	}
 
@@ -56,6 +67,25 @@ func (s *UserService) CreateUserByEmail(ctx context.Context, req *connect.Reques
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	res:= connect.NewResponse(&userv1.UserResponse{
+		User: userToProto(createdUser),
+	})
+	return res,nil
+}
+
+func (s *UserService) CreateUserByPhone(ctx context.Context, req *connect.Request[userv1.CreateUserByPhoneRequest],)(*connect.Response[userv1.UserResponse], error){
+	if req.Msg.Phone==""{
+		return nil, connect.NewError(connect.CodeInvalidArgument, connect.NewError(connect.CodeInvalidArgument, errors.New("phone is required")))
+	}
+	userModel:= &models.User{
+		Name: req.Msg.Name,
+		Lastname: req.Msg.Lastname,
+		Email: req.Msg.Email,
+		Phone: req.Msg.Phone,
+		Origin: req.Msg.Origin,
+	}
+	createdUser, err:= s.repo.CreateUserByPhone(ctx, userModel)
+	if err!=nil{return nil, connect.NewError(connect.CodeInternal, err)}
+	res:=connect.NewResponse(&userv1.UserResponse{
 		User: userToProto(createdUser),
 	})
 	return res,nil

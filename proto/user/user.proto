@@ -22,6 +22,7 @@ message User{
 
 service UserService{
     rpc CreateUserByEmail(CreateUserByEmailRequest) returns (UserResponse);
+    rpc CreateUserByPhone(CreateUserByPhoneRequest) returns(UserResponse);
     rpc GetUser(GetUserRequest) returns (UserResponse);
     rpc UpdateUser(UpdateUserRequest) returns (UserResponse);
     rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
@@ -33,6 +34,14 @@ message CreateUserByEmailRequest {
     string lastname = 2;
     string email = 3;
     string password = 4;
+    string origin = 5;
+}
+
+message CreateUserByPhoneRequest {
+    string name = 1;
+    string lastname = 2;
+    string email = 3;
+    string phone = 4;
     string origin = 5;
 }
 
@@ -71,4 +80,14 @@ message LoginByEmailRequest{
 message LoginByEmailResponse{
     string token = 1;
     User user = 2;
+}
+
+message LoginByPhoneRequest{
+    string phone=1;
+    string otp=2;
+}
+
+message LoginByPhoneResponse{
+    string token=1;
+    User user=2;
 }

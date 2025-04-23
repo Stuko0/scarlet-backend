@@ -36,6 +36,9 @@ const (
 	// UserServiceCreateUserByEmailProcedure is the fully-qualified name of the UserService's
 	// CreateUserByEmail RPC.
 	UserServiceCreateUserByEmailProcedure = "/user.v1.UserService/CreateUserByEmail"
+	// UserServiceCreateUserByPhoneProcedure is the fully-qualified name of the UserService's
+	// CreateUserByPhone RPC.
+	UserServiceCreateUserByPhoneProcedure = "/user.v1.UserService/CreateUserByPhone"
 	// UserServiceGetUserProcedure is the fully-qualified name of the UserService's GetUser RPC.
 	UserServiceGetUserProcedure = "/user.v1.UserService/GetUser"
 	// UserServiceUpdateUserProcedure is the fully-qualified name of the UserService's UpdateUser RPC.
@@ -50,6 +53,7 @@ const (
 // UserServiceClient is a client for the user.v1.UserService service.
 type UserServiceClient interface {
 	CreateUserByEmail(context.Context, *connect_go.Request[v1.CreateUserByEmailRequest]) (*connect_go.Response[v1.UserResponse], error)
+	CreateUserByPhone(context.Context, *connect_go.Request[v1.CreateUserByPhoneRequest]) (*connect_go.Response[v1.UserResponse], error)
 	GetUser(context.Context, *connect_go.Request[v1.GetUserRequest]) (*connect_go.Response[v1.UserResponse], error)
 	UpdateUser(context.Context, *connect_go.Request[v1.UpdateUserRequest]) (*connect_go.Response[v1.UserResponse], error)
 	DeleteUser(context.Context, *connect_go.Request[v1.DeleteUserRequest]) (*connect_go.Response[v1.DeleteUserResponse], error)
@@ -69,6 +73,11 @@ func NewUserServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts
 		createUserByEmail: connect_go.NewClient[v1.CreateUserByEmailRequest, v1.UserResponse](
 			httpClient,
 			baseURL+UserServiceCreateUserByEmailProcedure,
+			opts...,
+		),
+		createUserByPhone: connect_go.NewClient[v1.CreateUserByPhoneRequest, v1.UserResponse](
+			httpClient,
+			baseURL+UserServiceCreateUserByPhoneProcedure,
 			opts...,
 		),
 		getUser: connect_go.NewClient[v1.GetUserRequest, v1.UserResponse](
@@ -97,6 +106,7 @@ func NewUserServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts
 // userServiceClient implements UserServiceClient.
 type userServiceClient struct {
 	createUserByEmail *connect_go.Client[v1.CreateUserByEmailRequest, v1.UserResponse]
+	createUserByPhone *connect_go.Client[v1.CreateUserByPhoneRequest, v1.UserResponse]
 	getUser           *connect_go.Client[v1.GetUserRequest, v1.UserResponse]
 	updateUser        *connect_go.Client[v1.UpdateUserRequest, v1.UserResponse]
 	deleteUser        *connect_go.Client[v1.DeleteUserRequest, v1.DeleteUserResponse]
@@ -106,6 +116,11 @@ type userServiceClient struct {
 // CreateUserByEmail calls user.v1.UserService.CreateUserByEmail.
 func (c *userServiceClient) CreateUserByEmail(ctx context.Context, req *connect_go.Request[v1.CreateUserByEmailRequest]) (*connect_go.Response[v1.UserResponse], error) {
 	return c.createUserByEmail.CallUnary(ctx, req)
+}
+
+// CreateUserByPhone calls user.v1.UserService.CreateUserByPhone.
+func (c *userServiceClient) CreateUserByPhone(ctx context.Context, req *connect_go.Request[v1.CreateUserByPhoneRequest]) (*connect_go.Response[v1.UserResponse], error) {
+	return c.createUserByPhone.CallUnary(ctx, req)
 }
 
 // GetUser calls user.v1.UserService.GetUser.
@@ -131,6 +146,7 @@ func (c *userServiceClient) LoginByEmail(ctx context.Context, req *connect_go.Re
 // UserServiceHandler is an implementation of the user.v1.UserService service.
 type UserServiceHandler interface {
 	CreateUserByEmail(context.Context, *connect_go.Request[v1.CreateUserByEmailRequest]) (*connect_go.Response[v1.UserResponse], error)
+	CreateUserByPhone(context.Context, *connect_go.Request[v1.CreateUserByPhoneRequest]) (*connect_go.Response[v1.UserResponse], error)
 	GetUser(context.Context, *connect_go.Request[v1.GetUserRequest]) (*connect_go.Response[v1.UserResponse], error)
 	UpdateUser(context.Context, *connect_go.Request[v1.UpdateUserRequest]) (*connect_go.Response[v1.UserResponse], error)
 	DeleteUser(context.Context, *connect_go.Request[v1.DeleteUserRequest]) (*connect_go.Response[v1.DeleteUserResponse], error)
@@ -146,6 +162,11 @@ func NewUserServiceHandler(svc UserServiceHandler, opts ...connect_go.HandlerOpt
 	userServiceCreateUserByEmailHandler := connect_go.NewUnaryHandler(
 		UserServiceCreateUserByEmailProcedure,
 		svc.CreateUserByEmail,
+		opts...,
+	)
+	userServiceCreateUserByPhoneHandler := connect_go.NewUnaryHandler(
+		UserServiceCreateUserByPhoneProcedure,
+		svc.CreateUserByPhone,
 		opts...,
 	)
 	userServiceGetUserHandler := connect_go.NewUnaryHandler(
@@ -172,6 +193,8 @@ func NewUserServiceHandler(svc UserServiceHandler, opts ...connect_go.HandlerOpt
 		switch r.URL.Path {
 		case UserServiceCreateUserByEmailProcedure:
 			userServiceCreateUserByEmailHandler.ServeHTTP(w, r)
+		case UserServiceCreateUserByPhoneProcedure:
+			userServiceCreateUserByPhoneHandler.ServeHTTP(w, r)
 		case UserServiceGetUserProcedure:
 			userServiceGetUserHandler.ServeHTTP(w, r)
 		case UserServiceUpdateUserProcedure:
@@ -191,6 +214,10 @@ type UnimplementedUserServiceHandler struct{}
 
 func (UnimplementedUserServiceHandler) CreateUserByEmail(context.Context, *connect_go.Request[v1.CreateUserByEmailRequest]) (*connect_go.Response[v1.UserResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("user.v1.UserService.CreateUserByEmail is not implemented"))
+}
+
+func (UnimplementedUserServiceHandler) CreateUserByPhone(context.Context, *connect_go.Request[v1.CreateUserByPhoneRequest]) (*connect_go.Response[v1.UserResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("user.v1.UserService.CreateUserByPhone is not implemented"))
 }
 
 func (UnimplementedUserServiceHandler) GetUser(context.Context, *connect_go.Request[v1.GetUserRequest]) (*connect_go.Response[v1.UserResponse], error) {
