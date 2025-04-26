@@ -1,4 +1,4 @@
-package services_test
+package user
 
 import (
 	"context"
@@ -6,8 +6,6 @@ import (
 	"errors"
 
 	userv1 "github.com/Stuko0/scarlet-backend/gen/proto/user/v1"
-	"github.com/Stuko0/scarlet-backend/internal/models"
-	"github.com/Stuko0/scarlet-backend/internal/services"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/bcrypt"
@@ -15,64 +13,64 @@ import (
 
 )
 
-type UserRepository interface {
-	CreateUserByEmail(ctx context.Context, user *models.User) (*models.User, error)
-	GetUserByEmail(ctx context.Context, email string) (*models.User, error)
+type UserRepositoryTest interface {
+	CreateUserByEmail(ctx context.Context, user *User) (*User, error)
+	GetUserByEmail(ctx context.Context, email string) (*User, error)
 }
 
 type JWTManager interface {
-	Generate(user *models.User) (string, error)
+	Generate(user *User) (string, error)
 }
 
 type MockUserRepository struct {
 	mock.Mock
 }
 
-func (m *MockUserRepository) CreateUserByEmail(ctx context.Context, user *models.User) (*models.User, error) {
+func (m *MockUserRepository) CreateUserByEmail(ctx context.Context, user *User) (*User, error) {
 	args := m.Called(ctx, user)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*models.User), args.Error(1)
+	return args.Get(0).(*User), args.Error(1)
 }
 
-func (m *MockUserRepository) CreateUserByPhone(ctx context.Context, user *models.User) (*models.User, error) {
+func (m *MockUserRepository) CreateUserByPhone(ctx context.Context, user *User) (*User, error) {
 	args := m.Called(ctx, user)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*models.User), args.Error(1)
+	return args.Get(0).(*User), args.Error(1)
 }
 
-func (m *MockUserRepository) UpdateUser(ctx context.Context, user *models.User) (*models.User, error) {
+func (m *MockUserRepository) UpdateUser(ctx context.Context, user *User) (*User, error) {
 	args := m.Called(ctx, user)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*models.User), args.Error(1)
+	return args.Get(0).(*User), args.Error(1)
 }
 
-func (m *MockUserRepository) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
+func (m *MockUserRepository) GetUserByEmail(ctx context.Context, email string) (*User, error) {
 	args := m.Called(ctx, email)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*models.User), args.Error(1)
+	return args.Get(0).(*User), args.Error(1)
 }
 
-func (m *MockUserRepository) GetUserByID(ctx context.Context, userID int64) (*models.User, error) {
+func (m *MockUserRepository) GetUserByID(ctx context.Context, userID int64) (*User, error) {
 	args := m.Called(ctx, userID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*models.User), args.Error(1)
+	return args.Get(0).(*User), args.Error(1)
 }
 
 type MockJWTManager struct {
 	mock.Mock
 }
 
-func (m *MockJWTManager) Generate(user *models.User) (string, error) {
+func (m *MockJWTManager) Generate(user *User) (string, error) {
 	args := m.Called(user)
 	return args.String(0), args.Error(1)
 }
@@ -80,14 +78,14 @@ func (m *MockJWTManager) Generate(user *models.User) (string, error) {
 type testUserService struct {
 	repo       *MockUserRepository
 	jwtManager *MockJWTManager
-	service    *services.UserService
+	service    *UserService
 }
 
 func setupTestService() *testUserService {
 	mockRepo := &MockUserRepository{}
 	mockJWT := &MockJWTManager{}
 	
-	service := services.NewUserService(mockRepo, mockJWT)
+	service := NewUserService(mockRepo, mockJWT)
 	
 	return &testUserService{
 		repo:       mockRepo,
@@ -111,7 +109,7 @@ func TestCreateUserByEmail(t *testing.T) {
 			},
 		}
 		
-		expectedUser := &models.User{
+		expectedUser := &User{
 			UserId:    1,
 			Name:      "John",
 			Lastname:  "Doe",
@@ -124,7 +122,7 @@ func TestCreateUserByEmail(t *testing.T) {
 			UpdatedAt: "2025-04-23T00:00:00Z",
 		}
 		
-		testSetup.repo.On("CreateUserByEmail", ctx, mock.MatchedBy(func(u *models.User) bool {
+		testSetup.repo.On("CreateUserByEmail", ctx, mock.MatchedBy(func(u *User) bool {
 			return u.Name == request.Msg.Name &&
 				u.Lastname == request.Msg.Lastname &&
 				u.Email == request.Msg.Email &&
@@ -255,7 +253,7 @@ func TestLoginByEmail(t *testing.T) {
 		
 		hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 		
-		mockUser := &models.User{
+		mockUser := &User{
 			UserId:    1,
 			Name:      "John",
 			Lastname:  "Doe",
@@ -365,7 +363,7 @@ func TestLoginByEmail(t *testing.T) {
 		
 		hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(correctPassword), bcrypt.DefaultCost)
 		
-		mockUser := &models.User{
+		mockUser := &User{
 			UserId:    1,
 			Email:     email,
 			Password:  string(hashedPassword),
@@ -402,7 +400,7 @@ func TestLoginByEmail(t *testing.T) {
 		
 		hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 		
-		mockUser := &models.User{
+		mockUser := &User{
 			UserId:    1,
 			Email:     email,
 			Password:  string(hashedPassword),

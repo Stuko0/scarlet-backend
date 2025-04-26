@@ -1,13 +1,10 @@
-package services
+package user
 
 import (
 	"context"
 	"errors"
 	"connectrpc.com/connect"
 	userv1 "github.com/Stuko0/scarlet-backend/gen/proto/user/v1"
-	// "github.com/Stuko0/scarlet-backend/internal/auth"
-	"github.com/Stuko0/scarlet-backend/internal/models"
-	"github.com/Stuko0/scarlet-backend/internal/repository"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -16,7 +13,7 @@ type UserService struct{
 	jwtManager JWTManagerInterface
 }
 
-func userToProto(user *models.User) *userv1.User {
+func userToProto(user *User) *userv1.User {
 	return &userv1.User{
 		UserId:    user.UserId,
 		Name:      user.Name,
@@ -54,7 +51,7 @@ func (s *UserService) CreateUserByEmail(ctx context.Context, req *connect.Reques
 
 	if err != nil{return nil, connect.NewError(connect.CodeInternal, err)}
 
-	userModel := &models.User{
+	userModel := &User{
 		Name:     req.Msg.Name,
 		Lastname: req.Msg.Lastname,
 		Email:    req.Msg.Email,
@@ -76,7 +73,7 @@ func (s *UserService) CreateUserByPhone(ctx context.Context, req *connect.Reques
 	if req.Msg.Phone==""{
 		return nil, connect.NewError(connect.CodeInvalidArgument, connect.NewError(connect.CodeInvalidArgument, errors.New("phone is required")))
 	}
-	userModel:= &models.User{
+	userModel:= &User{
 		Name: req.Msg.Name,
 		Lastname: req.Msg.Lastname,
 		Email: req.Msg.Email,
@@ -96,7 +93,7 @@ func (s *UserService) UpdateUser(ctx context.Context, req *connect.Request[userv
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("user ID is required"))
 	}
 
-	update:=&models.User{
+	update:=&User{
 		UserId: req.Msg.UserId,
 		Name: req.Msg.Name,
 		Lastname: req.Msg.Lastname,
@@ -109,7 +106,7 @@ func (s *UserService) UpdateUser(ctx context.Context, req *connect.Request[userv
 
 	updateUser,err:=s.repo.UpdateUser(ctx, update)
 	if err!=nil{
-		if errors.Is(err, repository.ErrUserNotFound){
+		if errors.Is(err, ErrUserNotFound){
 			return nil, connect.NewError(connect.CodeNotFound, errors.New("user not found"))
 		}
 		return nil, connect.NewError(connect.CodeInternal,err)
@@ -155,7 +152,7 @@ func (s *UserService)GetUser(ctx context.Context, req *connect.Request[userv1.Ge
 
 	user, err:= s.repo.GetUserByID(ctx, userID)
 	if err!=nil{
-		if errors.Is(err, repository.ErrUserNotFound){
+		if errors.Is(err, ErrUserNotFound){
 			return nil, connect.NewError(connect.CodeNotFound, errors.New("user not found"))
 		}
 		return nil, connect.NewError(connect.CodeInternal, err)

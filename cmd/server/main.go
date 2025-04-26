@@ -14,8 +14,7 @@ import (
 	"github.com/Stuko0/scarlet-backend/gen/proto/user/v1/userv1connect"
 	"github.com/Stuko0/scarlet-backend/internal/auth"
 	"github.com/Stuko0/scarlet-backend/internal/database"
-	"github.com/Stuko0/scarlet-backend/internal/repository"
-	"github.com/Stuko0/scarlet-backend/internal/services"
+	"github.com/Stuko0/scarlet-backend/internal/domain/user"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 	"golang.org/x/net/http2"
@@ -46,8 +45,8 @@ func main() {
 	jwtManager, err := auth.NewJWTManager(privateKey, publicKey, 24*time.Hour)
 	if err != nil{log.Fatalf("failed to create JWT manager: %v",err)}
 
-	userRepo:=repository.NewUserRepository(db)
-	userService:=services.NewUserService(userRepo,jwtManager)
+	userRepo:=user.NewUserRepository(db)
+	userService:=user.NewUserService(userRepo,jwtManager)
 
 	mux:=http.NewServeMux()
 	path, handler := userv1connect.NewUserServiceHandler(userService)

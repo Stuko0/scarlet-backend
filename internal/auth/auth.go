@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Stuko0/scarlet-backend/internal/models"
+	"github.com/Stuko0/scarlet-backend/internal/domain/user"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -34,7 +34,7 @@ func NewJWTManager(privateKey []byte, publicKey []byte, accessTokenLife time.Dur
 	},nil
 }
 
-func (m *JWTManager) Generate(user *models.User)(string, error){
+func (m *JWTManager) Generate(user *user.User)(string, error){
 	claims :=Claims{
 		UserId: user.UserId,
 		Email:  user.Email,
