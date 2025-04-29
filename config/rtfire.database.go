@@ -3,10 +3,12 @@ package repository
 import (
 	"context"
 	"log"
+	"os"
 	"scarlet_backend/internal/domain/entities"
 
 	"cloud.google.com/go/firestore"
 	"google.golang.org/api/iterator"
+	"google.golang.org/api/option"
 )
 
 type RTFireRepository interface{
@@ -23,9 +25,17 @@ func NewRTFireRepository() RTFireRepository{
 	return &rtfireRepo{}
 }
 
+func getFirestoreClient(ctx context.Context) (*firestore.Client, error) {
+    // Usar explícitamente las credenciales
+    credentialsFile := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
+    opt := option.WithCredentialsFile(credentialsFile)
+    
+    return firestore.NewClient(ctx, projectId, opt)
+}
+
 func (*rtfireRepo) SaveRTFire(fire *entities.RTFire) (*entities.RTFire, error){
 	ctx := context.Background()
-	client, err  :=  firestore.NewClient(ctx, projectId)
+	client, err  :=  getFirestoreClient(ctx)
 	if err != nil{
 		log.Printf("No se pudo crear la conexion a la base de datos: %v", err)
 		return nil, err
@@ -54,7 +64,7 @@ func (*rtfireRepo) SaveRTFire(fire *entities.RTFire) (*entities.RTFire, error){
 
 func (*rtfireRepo) UpdateFire(fire *entities.RTFire) (*entities.RTFire, error){
 	ctx := context.Background()
-	client, err  :=  firestore.NewClient(ctx, projectId)
+	client, err  := getFirestoreClient(ctx)
 	if err != nil{
 		log.Printf("No se pudo crear la conexion a la base de datos: %v", err)
 		return nil, err
@@ -81,7 +91,7 @@ func (*rtfireRepo) UpdateFire(fire *entities.RTFire) (*entities.RTFire, error){
 
 func (*rtfireRepo) GetRTFireFromDB() ([]*entities.RTFire, error){
 	ctx := context.Background()
-	client, err  :=  firestore.NewClient(ctx, projectId)
+	client, err  :=  getFirestoreClient(ctx)
 	if err != nil{
 		log.Printf("No se pudo crear la conexion a la base de datos: %v", err)
 		return nil, err
@@ -111,7 +121,7 @@ func (*rtfireRepo) GetRTFireFromDB() ([]*entities.RTFire, error){
 
 func (*rtfireRepo) DeleteAllRTFires() error {
 	ctx := context.Background()
-	client, err := firestore.NewClient(ctx, projectId)
+	client, err := getFirestoreClient(ctx)
 	if err != nil {
 		log.Printf("No se pudo crear la conexion a la base de datos: %v", err)
 		return err

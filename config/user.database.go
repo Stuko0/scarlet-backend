@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
-	"cloud.google.com/go/firestore"
 	"google.golang.org/api/iterator"
 )
 
@@ -40,9 +39,10 @@ type OTPResponse struct {
 	OtpID string `json:"otp_id"`
 }
 
+
 func (*repo) SaveByEmail(user *entities.User) (*entities.User, error){
 	ctx := context.Background()
-	client, err  :=  firestore.NewClient(ctx, projectId)
+	client, err  :=  getFirestoreClient(ctx)
 	if err != nil{
 		log.Printf("No se pudo crear la conexion a la base de datos: %v", err)
 		return nil, err
@@ -67,7 +67,7 @@ func (*repo) SaveByEmail(user *entities.User) (*entities.User, error){
 
 func (*repo) FindAll()([]entities.User, error){
 	ctx := context.Background()
-	client, err  :=  firestore.NewClient(ctx, projectId)
+	client, err  :=  getFirestoreClient(ctx)
 	if err != nil{
 		log.Fatalf("No se pudo crear la conexion a la base de datos: %v", err)
 		return nil, err
@@ -97,7 +97,7 @@ func (*repo) FindAll()([]entities.User, error){
 
 func (*repo) FindByEmail(email string) (*entities.User, error){
 	ctx := context.Background()
-	client, err  :=  firestore.NewClient(ctx, projectId)
+	client, err  :=  getFirestoreClient(ctx)
 	if err != nil{
 		log.Printf("No se pudo crear la conexion a la base de datos: %v", err)
 		return nil, err
@@ -125,7 +125,7 @@ func (*repo) FindByEmail(email string) (*entities.User, error){
 
 func (*repo) FindById(id int) (*entities.User, error){
 	ctx := context.Background()
-	client, err  :=  firestore.NewClient(ctx, projectId)
+	client, err  :=  getFirestoreClient(ctx)
 	if err != nil{
 		log.Printf("No se pudo crear la conexion a la base de datos: %v", err)
 		return nil, err
@@ -170,7 +170,7 @@ func (r *repo) CheckLogin(email string, psw string) (*entities.User, error){
 
 func (*repo) FindByPhone(phone string) (*entities.User, error){
 	ctx := context.Background()
-	client, err  :=  firestore.NewClient(ctx, projectId)
+	client, err  :=  getFirestoreClient(ctx)
 	if err != nil{
 		log.Printf("No se pudo crear la conexion a la base de datos: %v", err)
 		return nil, err
@@ -243,7 +243,7 @@ func (*repo) VerifyOTP(otp_id string, otp_code string) error {
 
 func (*repo) SaveByPhone(user *entities.User) (*entities.User, error){
 	ctx := context.Background()
-	client, err  :=  firestore.NewClient(ctx, projectId)
+	client, err  :=  getFirestoreClient(ctx)
 	if err != nil{
 		log.Printf("No se pudo crear la conexion a la base de datos: %v", err)
 		return nil, err

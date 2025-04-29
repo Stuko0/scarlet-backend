@@ -1,15 +1,27 @@
 package main
 
 import (
-	"github.com/gorilla/handlers"
-	"github.com/gorilla/mux"
 	"log"
 	"net/http"
+	"os"
 	"scarlet_backend/internal/domain/services"
 	"time"
+
+	"github.com/gorilla/handlers"
+	"github.com/gorilla/mux"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	err := godotenv.Load()
+	if err!= nil{log.Fatalf("No se pudo encontrar al usuario: %v", err)}
+	credentialsFile := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
+    if credentialsFile == "" {
+        log.Printf("ADVERTENCIA: GOOGLE_APPLICATION_CREDENTIALS no está configurado")
+        // Configurar explícitamente si no está en el entorno
+        os.Setenv("GOOGLE_APPLICATION_CREDENTIALS", "./scarlet-419401.json")
+    }
+	log.Printf("GOOGLE_APPLICATION_CREDENTIALS: %s", os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"))
 	ticker := time.NewTicker(60 * time.Minute)
 	quit := make(chan struct{})
 	router := mux.NewRouter()
