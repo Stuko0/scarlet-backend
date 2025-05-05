@@ -15,6 +15,8 @@ import (
 	"github.com/Stuko0/scarlet-backend/internal/auth"
 	"github.com/Stuko0/scarlet-backend/internal/database"
 	"github.com/Stuko0/scarlet-backend/internal/domain/user"
+	"github.com/Stuko0/scarlet-backend/internal/domain/wildfire/current"
+	"github.com/Stuko0/scarlet-backend/internal/domain/wildfire/scrapers"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 	"golang.org/x/net/http2"
@@ -36,8 +38,21 @@ func main() {
 	defer cancel()
 
 	if err := pool.Ping(ctx); err !=nil{
-		log.Fatalf("Failed to ping database: %v", err)
+		log.Fatalf("Failed to ping postgresql database: %v", err)
 	}
+
+	mongoClient, err:= database.NewMongoClient(ctx)
+	if err!=nil{
+		log.Printf("failed to connect to MongoDB: %v", err)
+	}
+	wildfireDB:=mongoClient.Database("scarlet")
+	repo:=wildfire.NewMongoRepository(wildfireDB)
+	nasaScraper:=scrapers.NewFIRMSScraper(os.Getenv("NASA_API_KEY"), "BOL")
+	weatherScraper:=scrapers.NewOpenMeteoScraper()
+
+	wildfireSvc:=wildfire.NewWildfireNRTService(repo,[]scrapers.Scraper{nasaScraper}, weatherScraper,)
+	wildfireSvc.TriggerImmediateScrape(ctx)
+	go wildfireSvc.RunScrapers(ctx)
 
 	db := &database.Postgres{Pool: pool}
 	privateKey := []byte(os.Getenv("JWT_PRIVATE_KEY"))

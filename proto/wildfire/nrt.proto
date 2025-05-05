@@ -1,0 +1,101 @@
+syntax = "proto3";
+package nrt.v1;
+option go_package = "github.com/Stuko0/scarlet-backend/gen/proto/wildfire/v1;nrtv1";
+
+service NRTService {
+  rpc UpsertWildfire(UpsertRequest) returns (UpsertResponse);
+  rpc GetActiveFires(GetActiveFiresRequest) returns (GetActiveFiresResponse);
+  rpc GetNearbyFires(GetNearbyFiresRequest) returns (GetNearbyFiresResponse);
+  
+  rpc TriggerScrape(ScrapeRequest) returns (ScrapeResponse);
+  rpc StreamScrapeUpdates(ScrapeRequest) returns (stream WildfireUpdate);
+}
+message UpsertRequest {
+  WildfireNRT wildfire = 1;
+}
+
+message UpsertResponse {
+  string doc_id = 1;
+}
+
+message GetActiveFiresRequest {
+  // Can add filters/pagination later
+}
+
+message GetActiveFiresResponse {
+  repeated WildfireNRT wildfires = 1;
+}
+
+message GetNearbyFiresRequest {
+  GeoPoint location = 1;
+  int32 radius_km = 2;
+}
+
+message GetNearbyFiresResponse {
+  repeated WildfireNRT wildfires = 1;
+}
+
+message ScrapeRequest {
+  string scraper_name = 1;  // Optional: if empty, run all scrapers
+  bool immediate = 2;       // Whether to trigger immediate scrape
+}
+
+message ScrapeResponse {
+  int32 processed_count = 1;
+}
+
+message GeoPoint {
+	string type=1;
+	repeated double coordinates=2;
+}
+
+message GeoPolygon {
+	repeated GeoPoint coordinates =1;
+}
+
+message WildfiresBaseInfo{
+	string fire_id=1;
+	string name=2;
+	string status=3;
+	string location_description=4;
+	GeoPoint location =5;
+    string source =6;
+}
+
+message WeatherData{
+	double wind_speed = 1;
+	double wind_direction=2;
+	double temperature =3;
+	double humidity=4;
+	string last_updated=5;
+}
+
+message WildfireNRT{
+	string fire_id = 1;
+	string source = 2;
+	string external_id = 3;
+	string name = 4;
+	string status = 5;
+	string discovery_time = 6;
+	string last_updated = 7;
+	GeoPoint location = 8;
+	double area = 9;
+	string area_unit = 10;
+	WeatherData weather = 11;
+	map<string, string> metadata = 12;
+}
+
+message WildfireDelta {
+    string update_time=1;
+    repeated string updated_fields=2;
+    optional double new_contaiment=3;
+    optional GeoPolygon new_perimeter=4;
+}
+
+message WildfireUpdate {
+    string fire_id=1;
+    oneof update {
+        WildfireNRT full_update=2;
+        WildfireDelta delta=3;
+    }
+}

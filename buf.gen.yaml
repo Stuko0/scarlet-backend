@@ -2,7 +2,9 @@ version: v1
 plugins:
   - name: go
     out: gen
-    opt: paths=source_relative
+    opt: 
+      - paths=source_relative
   - name: connect-go
     out: gen
-    opt: paths=source_relative
+    opt: 
+      - paths=source_relative
