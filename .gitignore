@@ -4,41 +4,43 @@
 *.dll
 *.so
 *.dylib
+bin/
+dist/
 
 # Test binary, built with `go test -c`
 *.test
 
-# Output of the go coverage tool, specifically when used with LiteIDE
+# Output of the go coverage tool
 *.out
 
-# Dependency directories (remove the comment below to include it)
-# vendor/
+# Dependency directories
+vendor/
 
 # Go workspace file
 go.work
 
-# Environment variables
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment files
 .env
 .env.local
 .env.development
 .env.test
 .env.production
 
-# Generated files
-# You might want to include or exclude the gen directory based on your workflow
-# gen/
+# Certificate files
+*.pem
+*.key
+*.crt
 
-# Logs
-*.log
-logs/
-log/
+# Generated protobuf files
+gen/
 
-# Database files
-*.db
-*.sqlite
-*.sqlite3
-
-# OS specific files
+# OS generated files
 .DS_Store
 .DS_Store?
 ._*
@@ -47,26 +49,8 @@ log/
 ehthumbs.db
 Thumbs.db
 
-# IDE specific files
-.idea/
-.vscode/
-*.swp
-*.swo
+# Log files
+*.log
 
-# Temporary files
-tmp/
-temp/
-
-# PEM files (since you have private.pem and public.pem in your project)
-*.pem
-
-# Any backup files
-*.bak
-
-# Build output
-bin/
-dist/
-build/
-
-# Application specific
-# Add any other application specific files or directories here
+# Debug files
+debug
