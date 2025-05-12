@@ -3,6 +3,8 @@ package user
 import (
 	"context"
 	"errors"
+	"log"
+
 	"connectrpc.com/connect"
 	userv1 "github.com/Stuko0/scarlet-backend/gen/proto/user/v1"
 	"golang.org/x/crypto/bcrypt"
@@ -15,7 +17,7 @@ type UserService struct{
 
 func userToProto(user *User) *userv1.User {
 	return &userv1.User{
-		UserId:    user.UserId,
+		UserId:    int64(user.UserId),
 		Name:      user.Name,
 		Lastname:  user.Lastname,
 		Email:     user.Email,
@@ -136,12 +138,28 @@ func (s *UserService) LoginByEmail (ctx context.Context, req *connect.Request[us
 	if err != nil{
 		return nil, connect.NewError(connect.CodeInternal, errors.New("failed to generate token"))
 	}
+	log.Printf("Respuesta a enviar: %+v\n", connect.NewResponse(&userv1.UserResponse{
+		User: userToProto(user),
+	}))
 
 	res:=connect.NewResponse(&userv1.LoginByEmailResponse{
 		Token: token,
 		User: userToProto(user),
 	})
 	return res, nil
+}
+
+func (s *UserService)GetUserByEmail(ctx context.Context, req *connect.Request[userv1.GetUserByEmailRequest])(*connect.Response[userv1.UserResponse], error){
+	if req.Msg.Email==""{
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("email is required"))
+	}
+	user, err := s.repo.GetUserByEmail(ctx, req.Msg.Email)
+	if err!=nil{
+		return nil, connect.NewError(connect.CodeNotFound, errors.New("user not found"))
+	}
+	return connect.NewResponse(&userv1.UserResponse{
+		User: userToProto(user),
+	}), nil
 }
 
 func (s *UserService)GetUser(ctx context.Context, req *connect.Request[userv1.GetUserRequest],)(*connect.Response[userv1.UserResponse], error){

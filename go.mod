@@ -2,7 +2,6 @@ module github.com/Stuko0/scarlet-backend
 
 go 1.24.0
 
-// github.com/bufbuild/connect-go v1.10.0
 require github.com/jackc/pgx/v5 v5.7.4
 
 require (

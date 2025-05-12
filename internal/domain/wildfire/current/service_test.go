@@ -41,16 +41,15 @@ type MockScraper struct {
 }
 
 func (m *MockScraper) Name() string {
-	return "mock-scraper" // Fixed to return consistent value
+	return "mock-scraper"
 }
 
 func (m *MockScraper) Interval() time.Duration {
-	return 5 * time.Minute // Fixed to return consistent value
+	return 5 * time.Minute
 }
 
 func (m *MockScraper) Scrape(ctx context.Context) ([]*scrapers.WildfireDetection, error) {
 	args := m.Called(ctx)
-	// Ensure we return []*scrapers.WildfireDetection, not []scrapers.WildfireDetection
 	return args.Get(0).([]*scrapers.WildfireDetection), args.Error(1)
 }
 
@@ -86,7 +85,6 @@ func (s *WildfireServiceTestSuite) SetupTest() {
 }
 
 func (s *WildfireServiceTestSuite) TestGetActiveFires_Success() {
-	// Setup test data
 	testFires := []*WildfireNRT{
 		{
 			FireID: "fire-123",

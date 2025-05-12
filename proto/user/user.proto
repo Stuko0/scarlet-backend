@@ -24,6 +24,7 @@ service UserService{
     rpc CreateUserByEmail(CreateUserByEmailRequest) returns (UserResponse);
     rpc CreateUserByPhone(CreateUserByPhoneRequest) returns(UserResponse);
     rpc GetUser(GetUserRequest) returns (UserResponse);
+    rpc GetUserByEmail(GetUserByEmailRequest)returns(UserResponse);
     rpc UpdateUser(UpdateUserRequest) returns (UserResponse);
     rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
     rpc LoginByEmail(LoginByEmailRequest) returns (LoginByEmailResponse);
@@ -51,6 +52,11 @@ message UserResponse {
 
 message GetUserRequest{
     int64 user_id = 1;
+}
+
+
+message GetUserByEmailRequest{
+    string email = 1;
 }
 
 message UpdateUserRequest{
