@@ -17,6 +17,6 @@ type WildfireDetection struct{
 	Latitude float64
 	Longitude float64
 	DiscoveredAt time.Time
-	Confidence float64
+	Confidence string
 	AdditionalData map[string]interface{}
 }

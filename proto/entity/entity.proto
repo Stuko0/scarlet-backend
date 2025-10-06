@@ -1,0 +1,48 @@
+syntax = "proto3";
+package entity.v1;
+option go_package = "github.com/Stuko0/scarlet-backend/gen/proto/entity/v1;entityv1";
+
+message Entity {
+  int64 entity_id = 1;
+  string name = 2;
+  string entity_type = 3;
+  string address = 4;
+  int64 phone = 5;
+  string email = 6;
+  string image = 7;
+  bool active = 8;
+  string created_at = 9;
+  string updated_at = 10;
+}
+
+service EntityService {
+  rpc CreateEntity(CreateEntityRequest) returns (EntityResponse);
+  rpc GetEntity(GetEntityRequest) returns (EntityResponse);
+  rpc UpdateEntity(UpdateEntityRequest) returns (EntityResponse);
+  rpc DeleteEntity(DeleteEntityRequest) returns (DeleteEntityResponse);
+}
+
+message CreateEntityRequest {
+  Entity entity = 1;
+}
+
+message UpdateEntityRequest {
+  Entity entity = 1;
+}
+
+message EntityResponse {
+  Entity entity = 1;
+}
+
+message GetEntityRequest {
+  int64 entity_id = 1;
+}
+
+message DeleteEntityRequest {
+  int64 entity_id = 1;
+}
+
+message DeleteEntityResponse {
+  bool success = 1;
+  string message = 2;
+}

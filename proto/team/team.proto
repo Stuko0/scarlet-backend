@@ -1,0 +1,99 @@
+syntax = "proto3";
+
+package team.v1;
+
+option go_package = "github.com/Stuko0/scarlet-backend/gen/proto/team/v1;teamv1";
+
+message Team {
+  int64 team_id = 1;
+  int64 entity_id = 2;
+  string name = 3;
+  string team_type = 4;
+  int64 capacity = 5;
+  int64 fires_attended = 6;
+  int64 team_leader_id = 7;
+  bool active = 8;
+  string created_at = 9;
+  string updated_at = 10;
+}
+
+message TeamMember {
+  int64 team_member_id = 1;
+  int64 team_id = 2;
+  int64 user_id = 3;
+  string role = 4;
+  bool active = 5;
+  string joinded_at = 6;
+}
+
+service TeamService {
+  // Operaciones para Equipos
+  rpc CreateTeam(CreateTeamRequest) returns (TeamResponse);
+  rpc GetTeam(GetTeamRequest) returns (TeamResponse);
+  rpc UpdateTeam(UpdateTeamRequest) returns (TeamResponse);
+  rpc DeleteTeam(DeleteTeamRequest) returns (DeleteTeamResponse);
+  rpc ListTeams(ListTeamsRequest) returns (ListTeamsResponse);
+
+  // Operaciones para Miembros
+  rpc AddMember(AddMemberRequest) returns (MemberResponse);
+  rpc RemoveMember(RemoveMemberRequest) returns (RemoveMemberResponse);
+  rpc UpdateMember(UpdateMemberRequest) returns (MemberResponse);
+  rpc ListMembers(ListMembersRequest) returns (ListMembersResponse);
+}
+
+// Mensajes para Equipos
+message CreateTeamRequest {
+  Team team = 1;
+}
+
+message GetTeamRequest {
+  int64 team_id = 1;
+}
+
+message TeamResponse {
+  Team team = 1;
+}
+
+message UpdateTeamRequest {
+  Team team = 1;
+}
+
+message DeleteTeamRequest {
+  int64 team_id = 1;
+}
+message DeleteTeamResponse {
+  bool success = 1;
+}
+
+message ListTeamsRequest {
+  int64 entity_id = 1;
+}
+message ListTeamsResponse {
+  repeated Team teams = 1;
+}
+
+// Mensajes para Miembros
+message AddMemberRequest {
+  TeamMember member = 1;
+}
+message MemberResponse {
+  TeamMember member = 1;
+}
+
+message RemoveMemberRequest {
+  int64 team_member_id = 1;
+}
+message RemoveMemberResponse {
+  bool success = 1;
+}
+
+message UpdateMemberRequest {
+  TeamMember member = 1;
+}
+
+message ListMembersRequest {
+  int64 team_id = 1;
+}
+message ListMembersResponse {
+  repeated TeamMember members = 1;
+}

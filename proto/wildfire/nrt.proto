@@ -6,9 +6,7 @@ service NRTService {
   rpc UpsertWildfire(UpsertRequest) returns (UpsertResponse);
   rpc GetActiveFires(GetActiveFiresRequest) returns (GetActiveFiresResponse);
   rpc GetNearbyFires(GetNearbyFiresRequest) returns (GetNearbyFiresResponse);
-  
   rpc TriggerScrape(ScrapeRequest) returns (ScrapeResponse);
-  rpc StreamScrapeUpdates(ScrapeRequest) returns (stream WildfireUpdate);
 }
 message UpsertRequest {
   WildfireNRT wildfire = 1;
@@ -81,8 +79,9 @@ message WildfireNRT{
 	GeoPoint location = 8;
 	double area = 9;
 	string area_unit = 10;
-	WeatherData weather = 11;
-	map<string, string> metadata = 12;
+	string confidence=11;
+	WeatherData weather = 12;
+	map<string, string> metadata = 13;
 }
 
 message WildfireDelta {

@@ -7,7 +7,7 @@ db.current_wildfires.createIndex({"location": "2dsphere"});
 
 db.current_wildfires.createIndex(
     {"last_updated": 1},
-    {expireAfterSeconds:604800}
+    {expireAfterSeconds:86400}
 );
 
 db.runCommand({

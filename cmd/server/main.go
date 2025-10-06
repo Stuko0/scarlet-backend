@@ -10,10 +10,14 @@ import (
 	"syscall"
 	"time"
 
+	"connectrpc.com/connect"
 	"connectrpc.com/grpchealth"
+	"github.com/Stuko0/scarlet-backend/gen/proto/entity/v1/entityv1connect"
 	"github.com/Stuko0/scarlet-backend/gen/proto/user/v1/userv1connect"
+	"github.com/Stuko0/scarlet-backend/gen/proto/wildfire/v1/nrtv1connect"
 	"github.com/Stuko0/scarlet-backend/internal/auth"
 	"github.com/Stuko0/scarlet-backend/internal/database"
+	"github.com/Stuko0/scarlet-backend/internal/domain/entity"
 	"github.com/Stuko0/scarlet-backend/internal/domain/user"
 	"github.com/Stuko0/scarlet-backend/internal/domain/wildfire/current"
 	"github.com/Stuko0/scarlet-backend/internal/domain/wildfire/scrapers"
@@ -45,12 +49,17 @@ func main() {
 	if err!=nil{
 		log.Printf("failed to connect to MongoDB: %v", err)
 	}
+	if err := mongoClient.Ping(ctx, nil); err != nil {
+		log.Fatalf("Failed to ping MongoDB: %v", err)
+	}
 	wildfireDB:=mongoClient.Database("scarlet")
-	repo:=wildfire.NewMongoRepository(wildfireDB)
-	nasaScraper:=scrapers.NewFIRMSScraper(os.Getenv("NASA_API_KEY"), "BOL")
+	redisClient := database.NewRedisClient()
+	defer redisClient.Close()
+	repo:=wildfire.NewCachedRepository(wildfire.NewMongoRepository(wildfireDB), redisClient)
+	nasaScraper:=scrapers.NewFIRMSScraper(os.Getenv("NASA_API_KEY"), "-69.38,-22.53,-57.26,-9.38") // Bolivia bounding box
 	weatherScraper:=scrapers.NewOpenMeteoScraper()
 
-	wildfireSvc:=wildfire.NewWildfireNRTService(repo,[]scrapers.Scraper{nasaScraper}, weatherScraper,)
+	wildfireSvc:=wildfire.NewWildfireNRTService(repo, redisClient,[]scrapers.Scraper{nasaScraper}, weatherScraper,)
 	wildfireSvc.TriggerImmediateScrape(ctx)
 	go wildfireSvc.RunScrapers(ctx)
 
@@ -69,6 +78,17 @@ func main() {
 
 	checker:=grpchealth.NewStaticChecker(userv1connect.UserServiceName)
 	mux.Handle(grpchealth.NewHandler(checker))
+
+	entityRepo := entity.NewEntitieRepository(db)
+	entityService := entity.NewEntityService(entityRepo)
+	pathEntities, handlerEntities := entityv1connect.NewEntityServiceHandler(entityService)
+	mux.Handle(pathEntities, handlerEntities)
+
+	pathFires, handlerFires := nrtv1connect.NewNRTServiceHandler(
+		wildfireSvc,
+		connect.WithCompressMinBytes(1024),
+	)
+	mux.Handle(pathFires, handlerFires)
 
 	server := &http.Server{
 		Addr: ":8000",

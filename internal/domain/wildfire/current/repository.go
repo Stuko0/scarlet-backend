@@ -10,13 +10,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type WildfireNRTRepository interface{
-	UpsertFromDetection(ctx context.Context, detection *WildfireNRT)error
-	GetActiveFires(ctx context.Context)([]*WildfireNRT, error)
-	GetNearbyFires(ctx context.Context, lat, lng float64, radiusKm int)([]*WildfireNRT, error)
-	BulkUpsertFromDetections(ctx context.Context, detections[]*WildfireNRT)error
-}
-
 type MongoRepository struct{
 	collection *mongo.Collection
 }
